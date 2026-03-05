@@ -13,7 +13,63 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
-            notEmpty: { msg: 'El nombre es requerido' },
+            notEmpty: { msg: 'El nombre completo es requerido' },
+        },
+    },
+    identificationNumber: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+        field: 'identification_number',
+        validate: {
+            notEmpty: { msg: 'El número de identificación es requerido' },
+        },
+    },
+    birthDate: {
+        type: DataTypes.DATEONLY,
+        allowNull: false,
+        field: 'birth_date',
+        validate: {
+            isDate: { msg: 'La fecha de nacimiento debe ser una fecha válida' },
+            isBefore: {
+                args: new Date().toISOString().split('T')[0],
+                msg: 'La fecha de nacimiento debe ser anterior a hoy',
+            },
+        },
+    },
+    age: {
+        type: DataTypes.VIRTUAL,
+        get() {
+            if (!this.birthDate) return null;
+            const today = new Date();
+            const birth = new Date(this.birthDate);
+            let age = today.getFullYear() - birth.getFullYear();
+            const monthDiff = today.getMonth() - birth.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                age--;
+            }
+            return age;
+        },
+    },
+    address: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+            notEmpty: { msg: 'La dirección es requerida' },
+        },
+    },
+    city: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+            notEmpty: { msg: 'La ciudad es requerida' },
+        },
+    },
+    department: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+            notEmpty: { msg: 'El departamento es requerido' },
         },
     },
     email: {

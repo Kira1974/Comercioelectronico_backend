@@ -1,6 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const hpp = require('hpp');
+const { xss } = require('express-xss-sanitizer');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
@@ -12,6 +16,8 @@ const cartRoutes = require('./routes/cart.routes');
 const orderRoutes = require('./routes/order.routes');
 const paymentRoutes = require('./routes/payment.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
+const reviewRoutes = require('./routes/review.routes');
+const returnRoutes = require('./routes/return.routes');
 
 // Middleware
 const { errorHandler } = require('./middlewares/errorHandler');
@@ -19,10 +25,64 @@ const { errorHandler } = require('./middlewares/errorHandler');
 const app = express();
 
 // ===================== MIDDLEWARE GLOBAL =====================
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(morgan('dev'));
+// Seguridad: headers HTTP seguros
+app.use(helmet());
+
+// Seguridad: CORS restringido según entorno
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',')
+    : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:4200'];
+
+app.use(cors({
+    origin: (origin, callback) => {
+        // Permitir requests sin origin (Postman, curl, swagger local)
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('CORS: Origen no permitido'));
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+}));
+
+// Seguridad: limitar tamaño del body (evitar payload bombing)
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
+// Seguridad: sanitizar inputs contra XSS
+app.use(xss());
+
+// Seguridad: evitar HTTP Parameter Pollution
+app.use(hpp());
+
+// Rate limiting general: 100 requests por IP cada 15 minutos
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: { success: false, message: 'Demasiadas solicitudes, intenta de nuevo en 15 minutos' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Rate limiting estricto para auth: 10 intentos por IP cada 15 minutos
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    message: { success: false, message: 'Demasiados intentos de autenticación, intenta de nuevo en 15 minutos' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+app.use('/api/', generalLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
+
+if (process.env.NODE_ENV === 'development') {
+    app.use(morgan('dev'));
+}
 
 // ===================== SWAGGER =====================
 const swaggerOptions = {
@@ -76,6 +136,8 @@ app.get('/api', (req, res) => {
             orders: '/api/orders',
             payments: '/api/payments',
             dashboard: '/api/dashboard',
+            reviews: '/api/reviews',
+            returns: '/api/returns',
         },
     });
 });
@@ -87,6 +149,8 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/returns', returnRoutes);
 
 // ===================== 404 =====================
 app.use((req, res) => {

@@ -4,10 +4,17 @@ const { User, Cart } = require('../models');
 const { sendVerificationEmail, sendResetPasswordEmail } = require('./email.service');
 
 class AuthService {
-    async register({ name, email, password }) {
+    async register({ name, identificationNumber, birthDate, address, city, department, email, password }) {
         const existingUser = await User.findOne({ where: { email } });
         if (existingUser) {
             const error = new Error('El email ya está registrado');
+            error.statusCode = 409;
+            throw error;
+        }
+
+        const existingId = await User.findOne({ where: { identificationNumber } });
+        if (existingId) {
+            const error = new Error('El número de identificación ya está registrado');
             error.statusCode = 409;
             throw error;
         }
@@ -18,7 +25,8 @@ class AuthService {
 
         // El rol siempre es 'customer' en el registro público
         const user = await User.create({
-            name, email, password,
+            name, identificationNumber, birthDate, address, city, department,
+            email, password,
             role: 'customer',
             verificationToken,
             verificationTokenExpires,
@@ -53,13 +61,37 @@ class AuthService {
     }
 
     async getProfile(userId) {
-        const user = await User.findByPk(userId);
+        const user = await User.findByPk(userId, {
+            attributes: { exclude: ['password', 'verificationToken', 'verificationTokenExpires', 'resetPasswordToken', 'resetPasswordExpires'] },
+        });
         if (!user) {
             const error = new Error('Usuario no encontrado');
             error.statusCode = 404;
             throw error;
         }
         return user;
+    }
+
+    async updateProfile(userId, { address, city, department }) {
+        const user = await User.findByPk(userId);
+        if (!user) {
+            const error = new Error('Usuario no encontrado');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        const updateData = {};
+        if (address !== undefined) updateData.address = address;
+        if (city !== undefined) updateData.city = city;
+        if (department !== undefined) updateData.department = department;
+
+        await user.update(updateData);
+
+        // Retornar usuario sin datos sensibles
+        const updatedUser = await User.findByPk(userId, {
+            attributes: { exclude: ['password', 'verificationToken', 'verificationTokenExpires', 'resetPasswordToken', 'resetPasswordExpires'] },
+        });
+        return updatedUser;
     }
 
     async verifyEmail(token) {

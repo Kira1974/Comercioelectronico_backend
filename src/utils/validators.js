@@ -3,11 +3,105 @@ const { body, param, query } = require('express-validator');
 const validators = {
     // Auth
     register: [
-        body('name').trim().notEmpty().withMessage('El nombre es requerido'),
+        body('name')
+            .trim()
+            .notEmpty().withMessage('El nombre completo es requerido')
+            .isLength({ min: 3 }).withMessage('El nombre debe tener al menos 3 caracteres')
+            .matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/).withMessage('El nombre solo puede contener letras y espacios')
+            .custom((value) => {
+                const words = value.trim().split(/\s+/);
+                if (words.length < 2) {
+                    throw new Error('Debe ingresar nombre y apellido');
+                }
+                for (const word of words) {
+                    if (word.length < 2) {
+                        throw new Error('Cada parte del nombre debe tener al menos 2 caracteres');
+                    }
+                }
+                return true;
+            }),
+        body('identificationNumber')
+            .trim()
+            .notEmpty().withMessage('El número de identificación es requerido')
+            .matches(/^\d+$/).withMessage('El número de identificación solo puede contener dígitos')
+            .isLength({ min: 6, max: 12 }).withMessage('El número de identificación debe tener entre 6 y 12 dígitos'),
+        body('birthDate')
+            .notEmpty().withMessage('La fecha de nacimiento es requerida')
+            .isDate({ format: 'YYYY-MM-DD', strictMode: true }).withMessage('La fecha de nacimiento debe tener el formato YYYY-MM-DD')
+            .custom((value) => {
+                const birth = new Date(value);
+                const today = new Date();
+                if (birth >= today) {
+                    throw new Error('La fecha de nacimiento debe ser anterior a hoy');
+                }
+                const age = today.getFullYear() - birth.getFullYear();
+                const monthDiff = today.getMonth() - birth.getMonth();
+                const realAge = (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate()))
+                    ? age - 1 : age;
+                if (realAge < 18) {
+                    throw new Error('Debes tener al menos 18 años para registrarte');
+                }
+                if (realAge > 120) {
+                    throw new Error('La fecha de nacimiento no es válida');
+                }
+                return true;
+            }),
+        body('address').trim().notEmpty().withMessage('La dirección es requerida'),
+        body('city').trim().notEmpty().withMessage('La ciudad es requerida'),
+        body('department').trim().notEmpty().withMessage('El departamento es requerido'),
         body('email').isEmail().withMessage('Email inválido').normalizeEmail(),
         body('password')
             .isLength({ min: 6 })
             .withMessage('La contraseña debe tener al menos 6 caracteres'),
+    ],
+
+    updateProfile: [
+        body('address').optional().trim().notEmpty().withMessage('La dirección no puede estar vacía'),
+        body('city').optional().trim().notEmpty().withMessage('La ciudad no puede estar vacía'),
+        body('department').optional().trim().notEmpty().withMessage('El departamento no puede estar vacío'),
+    ],
+
+    // Returns
+    createReturn: [
+        body('orderId')
+            .notEmpty().withMessage('El ID de la orden es requerido')
+            .isInt({ min: 1 }).withMessage('El ID de la orden debe ser un número válido'),
+        body('orderItemId')
+            .notEmpty().withMessage('El ID del ítem de la orden es requerido')
+            .isInt({ min: 1 }).withMessage('El ID del ítem debe ser un número válido'),
+        body('quantity')
+            .notEmpty().withMessage('La cantidad es requerida')
+            .isInt({ min: 1 }).withMessage('La cantidad debe ser al menos 1'),
+        body('reason')
+            .notEmpty().withMessage('El motivo de devolución es requerido')
+            .isIn(['defecto_fabricacion', 'daño_envio', 'producto_incorrecto', 'no_cumple_expectativas', 'otro'])
+            .withMessage('Motivo inválido. Valores permitidos: defecto_fabricacion, daño_envio, producto_incorrecto, no_cumple_expectativas, otro'),
+        body('description')
+            .trim()
+            .notEmpty().withMessage('La descripción del problema es requerida')
+            .isLength({ min: 10, max: 1000 }).withMessage('La descripción debe tener entre 10 y 1000 caracteres'),
+    ],
+
+    updateReturnStatus: [
+        body('status')
+            .notEmpty().withMessage('El estado es requerido')
+            .isIn(['en_revision', 'aprobada', 'rechazada', 'completada'])
+            .withMessage('Estado inválido. Valores permitidos: en_revision, aprobada, rechazada, completada'),
+        body('adminComment')
+            .optional()
+            .trim()
+            .isLength({ max: 500 }).withMessage('El comentario no puede superar los 500 caracteres'),
+    ],
+
+    // Reviews
+    createReview: [
+        body('rating')
+            .notEmpty().withMessage('La calificación es requerida')
+            .isInt({ min: 1, max: 5 }).withMessage('La calificación debe ser un número entero entre 1 y 5'),
+        body('comment')
+            .optional()
+            .trim()
+            .isLength({ max: 1000 }).withMessage('El comentario no puede superar los 1000 caracteres'),
     ],
 
     login: [

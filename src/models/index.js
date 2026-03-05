@@ -8,6 +8,8 @@ const CartItem = require('./CartItem');
 const Order = require('./Order');
 const OrderItem = require('./OrderItem');
 const Payment = require('./Payment');
+const Review = require('./Review');
+const Return = require('./Return');
 
 // ===================== ASOCIACIONES =====================
 
@@ -43,6 +45,26 @@ Product.hasMany(OrderItem, { foreignKey: 'productId', as: 'orderItems' });
 Order.hasOne(Payment, { foreignKey: 'orderId', as: 'payment' });
 Payment.belongsTo(Order, { foreignKey: 'orderId', as: 'order' });
 
+// User -> Reviews (1:N)
+User.hasMany(Review, { foreignKey: 'userId', as: 'reviews' });
+Review.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// Product -> Reviews (1:N)
+Product.hasMany(Review, { foreignKey: 'productId', as: 'reviews' });
+Review.belongsTo(Product, { foreignKey: 'productId', as: 'product' });
+
+// User -> Returns (1:N)
+User.hasMany(Return, { foreignKey: 'userId', as: 'returns' });
+Return.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// Order -> Returns (1:N)
+Order.hasMany(Return, { foreignKey: 'orderId', as: 'returns' });
+Return.belongsTo(Order, { foreignKey: 'orderId', as: 'order' });
+
+// OrderItem -> Returns (1:N)
+OrderItem.hasMany(Return, { foreignKey: 'orderItemId', as: 'returns' });
+Return.belongsTo(OrderItem, { foreignKey: 'orderItemId', as: 'orderItem' });
+
 module.exports = {
     sequelize,
     User,
@@ -53,4 +75,6 @@ module.exports = {
     Order,
     OrderItem,
     Payment,
+    Review,
+    Return,
 };

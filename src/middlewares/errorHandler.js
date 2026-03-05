@@ -20,7 +20,13 @@ const validate = (req, res, next) => {
  * Middleware global de manejo de errores
  */
 const errorHandler = (err, req, res, next) => {
-    console.error('Error:', err);
+    // Solo loguear detalles completos en desarrollo
+    if (process.env.NODE_ENV === 'development') {
+        console.error('Error:', err);
+    } else {
+        // En producción solo loguear mensaje sin stack trace
+        console.error(`[${new Date().toISOString()}] ${err.name}: ${err.message}`);
+    }
 
     if (err.name === 'SequelizeValidationError') {
         const errors = err.errors.map((e) => ({
@@ -33,16 +39,22 @@ const errorHandler = (err, req, res, next) => {
     if (err.name === 'SequelizeUniqueConstraintError') {
         const errors = err.errors.map((e) => ({
             field: e.path,
-            message: `El valor '${e.value}' ya existe`,
+            message: `El valor ya está registrado`,
         }));
         return ApiResponse.error(res, 'Registro duplicado', 409, errors);
     }
 
-    return ApiResponse.error(
-        res,
-        process.env.NODE_ENV === 'development' ? err.message : 'Error interno del servidor',
-        err.statusCode || 500
-    );
+    // Error de CORS
+    if (err.message && err.message.startsWith('CORS:')) {
+        return ApiResponse.error(res, err.message, 403);
+    }
+
+    // En producción nunca exponer mensaje interno de errores no controlados
+    const message = process.env.NODE_ENV === 'development'
+        ? err.message
+        : (err.statusCode && err.statusCode < 500 ? err.message : 'Error interno del servidor');
+
+    return ApiResponse.error(res, message, err.statusCode || 500);
 };
 
 module.exports = { validate, errorHandler };

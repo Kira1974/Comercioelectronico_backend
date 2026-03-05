@@ -18,21 +18,33 @@ const router = Router();
  *         application/json:
  *           schema:
  *             type: object
- *             required: [name, email, password]
+ *             required: [name, identificationNumber, birthDate, address, city, department, email, password]
  *             properties:
  *               name:
  *                 type: string
  *                 example: Juan Pérez
+ *               identificationNumber:
+ *                 type: string
+ *                 example: '1234567890'
+ *               birthDate:
+ *                 type: string
+ *                 format: date
+ *                 example: '1995-06-15'
+ *               address:
+ *                 type: string
+ *                 example: Calle 123 #45-67
+ *               city:
+ *                 type: string
+ *                 example: Bogotá
+ *               department:
+ *                 type: string
+ *                 example: Cundinamarca
  *               email:
  *                 type: string
  *                 example: juan@email.com
  *               password:
  *                 type: string
  *                 example: password123
- *               role:
- *                 type: string
- *                 enum: [customer, admin]
- *                 example: customer
  *     responses:
  *       201:
  *         description: Usuario registrado exitosamente
@@ -84,6 +96,38 @@ router.post('/login', validators.login, validate, authController.login);
  *         description: No autenticado
  */
 router.get('/profile', auth, authController.getProfile);
+
+/**
+ * @swagger
+ * /api/auth/profile:
+ *   put:
+ *     summary: Actualizar perfil del usuario (dirección, ciudad, departamento)
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               address:
+ *                 type: string
+ *                 example: Calle 123 #45-67
+ *               city:
+ *                 type: string
+ *                 example: Bogotá
+ *               department:
+ *                 type: string
+ *                 example: Cundinamarca
+ *     responses:
+ *       200:
+ *         description: Perfil actualizado exitosamente
+ *       401:
+ *         description: No autenticado
+ */
+router.put('/profile', auth, validators.updateProfile, validate, authController.updateProfile);
 
 /**
  * @swagger

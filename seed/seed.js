@@ -13,15 +13,25 @@ const seed = async () => {
 
         // ==================== USUARIOS ====================
         const admin = await User.create({
-            name: 'Admin',
-            email: 'admin@ecommerce.com',
-            password: 'admin123',
+            name: 'Administrador Principal',
+            identificationNumber: '1003828562',
+            birthDate: '2002-11-28',
+            address: 'Calle 1 #1-01',
+            city: 'Neiva',
+            department: 'Huila',
+            email: 'davidcito01012002@gmail.com',
+            password: '409KL00c.',
             role: 'admin',
             emailVerified: true,
         });
 
         const customer1 = await User.create({
             name: 'Carlos Martínez',
+            identificationNumber: '1000000002',
+            birthDate: '1995-06-20',
+            address: 'Carrera 10 #20-30',
+            city: 'Medellín',
+            department: 'Antioquia',
             email: 'carlos@email.com',
             password: 'password123',
             role: 'customer',
@@ -30,6 +40,11 @@ const seed = async () => {
 
         const customer2 = await User.create({
             name: 'María López',
+            identificationNumber: '1000000003',
+            birthDate: '1998-03-10',
+            address: 'Avenida 5 #15-25',
+            city: 'Cali',
+            department: 'Valle del Cauca',
             email: 'maria@email.com',
             password: 'password123',
             role: 'customer',
@@ -149,7 +164,7 @@ const seed = async () => {
         console.log('✅ SEED COMPLETADO EXITOSAMENTE');
         console.log('============================================');
         console.log('\n📌 Credenciales de prueba:');
-        console.log('   Admin:    admin@ecommerce.com / admin123');
+        console.log('   Admin:    davicito01012002@gmail.com / 409KL00c.');
         console.log('   Cliente1: carlos@email.com / password123');
         console.log('   Cliente2: maria@email.com / password123');
         console.log('============================================\n');
