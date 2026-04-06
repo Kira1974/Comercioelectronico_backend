@@ -164,7 +164,7 @@ const seed = async () => {
         console.log('✅ SEED COMPLETADO EXITOSAMENTE');
         console.log('============================================');
         console.log('\n📌 Credenciales de prueba:');
-        console.log('   Admin:    davicito01012002@gmail.com / 409KL00c.');
+        console.log('   Admin:    davidcito01012002@gmail.com / 409KL00c.');
         console.log('   Cliente1: carlos@email.com / password123');
         console.log('   Cliente2: maria@email.com / password123');
         console.log('============================================\n');
